@@ -8,51 +8,62 @@ import java.util.zip.ZipOutputStream;
 
 public class Main {
 
+    private static final StringBuilder LOG = new StringBuilder("");
 
     public static void main(String[] args) {
-        StringBuilder sb = new StringBuilder();
-        File myFile = new File("C://Users//Anato//Рабочий стол//задчи по джаве//Games//savegames//save3.dat");
-        try {
-            if (myFile.createNewFile()) ;
-            sb.append("Файл был создан \n");
-        } catch (IOException ex) {
-            sb.append(ex.getMessage());
-        }
-        System.out.println(sb.toString());
-        String absPath = ("C://Users//Anato//Рабочий стол//задчи по джаве//Games//savegames//zip.zip");
-        List<String> list = new ArrayList<>();
-        list.add(absPath);
+
+        String userGameSavesDir = System.getProperty("user.home") + File.separator + "Games" + File.separator + "savegames";
+
+        String game1SaveFile = userGameSavesDir + File.separator + "save1.dat";
+        GameProgress gameFirst = new GameProgress(52, 65, 36, 25.6);
+        saveGame(game1SaveFile, gameFirst);
+
+        String game2SaveFile = userGameSavesDir + File.separator + "save2.dat";
+        GameProgress gameSecond = new GameProgress(30, 100, 80, 13);
+        saveGame(game2SaveFile, gameSecond);
+
+        String game3SaveFile = userGameSavesDir + File.separator + "save3.dat";
+        GameProgress gameThird = new GameProgress(80, 56, 45, 30);
+        saveGame(game3SaveFile, gameThird);
+
+        String gamesArchiveFile = userGameSavesDir + File.separator + "games.zip";
+        zipFiles(gamesArchiveFile, game1SaveFile, game2SaveFile, game3SaveFile);
+        System.out.println(LOG.toString());
     }
 
     public static void saveGame(String path, GameProgress game) {
-        GameProgress gameProgress = new GameProgress(52, 65, 36, 25.6);
-        try (FileOutputStream fos = new FileOutputStream("save3.dat");
+        try (FileOutputStream fos = new FileOutputStream(path);
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-            oos.writeObject(gameProgress);
+            oos.writeObject(game);
+            LOG.append("Game has been saved to file '").append(path).append("'\n");
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-
+            LOG.append("Something went wrong on saving game. Exception: ").append(ex.getMessage()).append("\n");
         }
     }
 
-    public static void zipFiles(String pathZip, List<String> list) {
+    public static void zipFiles(String pathZip, String... filesToZip) {
 
-        try (ZipOutputStream zout = new ZipOutputStream(new FileOutputStream("zip_output.zip"));
-             FileInputStream fis = new FileInputStream("notes.txt")) {
-            ZipEntry entry = new ZipEntry("packed_notes.txt");
-            zout.putNextEntry(entry);
-            byte[] buffer = new byte[fis.available()];
-            fis.read(buffer);
-            zout.write(buffer);
-            zout.closeEntry();
+        try (ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(pathZip))) {
+            for (String saveGameFile: filesToZip) {
+                try (FileInputStream fis = new FileInputStream(saveGameFile)) {
+                    ZipEntry entry = new ZipEntry(new File(saveGameFile).getName());
+                    zout.putNextEntry(entry);
+                    byte[] buffer = new byte[fis.available()];
+                    fis.read(buffer);
+                    zout.write(buffer);
+                    zout.closeEntry();
+                    LOG.append(saveGameFile).append(" has been written to zip file \n");
+                } catch (Exception ex) {
+                    LOG.append("Something went wraong on writing file ").append(saveGameFile).append(" tp zip archive ")
+                            .append(pathZip).append(", exception: ").append(ex.getMessage()).append("\n");
+                }
+                new File(saveGameFile).delete();
+                LOG.append("File ").append(saveGameFile).append(" has been deleted\n");
+            }
         } catch (Exception ex) {
-            System.out.println(ex.getMessage());
+            LOG.append("Something went wrong on wroking with zip archive ").append(pathZip).append(", exception:")
+                    .append(ex.getMessage()).append("\n");
         }
-        File del = new File("C://Users//Anato//Рабочий стол//задчи по джаве//Games//temp//temp.txt");
-        del.delete();
 
     }
 }
-
-
-
